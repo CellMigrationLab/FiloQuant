@@ -6,7 +6,7 @@
 //																																																							
 // Created the 17.08.2016 by Guillaume Jacquemet and Alex Carisey																																					
 //																																																							
-// Version 1.1 - 08.03.2017																																								
+// Version 1.1 - 19.05.2017																																								
 //              																																																		
 //=============================================================================================//
 
@@ -70,6 +70,10 @@
 	File.makeDirectory(interm_results_current);																		// Create a directory in intermediate_results_directory
 	resetMinAndMax();																								// Reset the intensity scale (to make predicatable results in case autoscale is default)
 	run("8-bit");																									// Transform image into 8-bit
+	// to add
+	getPixelSize(unit, pixelWidth, pixelHeight);																	// Determine the unit of the image
+	// to  add
+	
 	setTool("rectangular");																							// User Hand: draw around the cell
 	waitForUser("FiloQuant: Outline the region of interest.\n Then click Ok");														// Dialog box for user to choose the cell to analyse
 	run("Duplicate...", "image"); rename("image");																	// Image is duplicated and renamed image
@@ -250,7 +254,7 @@
 	run("Skeletonize (2D/3D)");																									// Run the Skeletonize (2D/3D) command (no user input, hard wired)
 	run("Analyze Skeleton (2D/3D)", "prune=none show display");																	// Filopodia measurement
 	selectWindow("Branch information");																							// Select the Branch information provided by the plugin used above
-	IJ.renameResults("FilopodiaLength");																						// Rename the Branch information table as FilopodiaLength
+	IJ.renameResults("FilopodiaLength"); wait(10);																						// Rename the Branch information table as FilopodiaLength
 	selectWindow("Results"); run("Close");																						// Select the Results table from the plugin and close it 
 	setOption("BlackBackground", true);
 	
@@ -387,7 +391,7 @@
 		selectWindow("contour");																						// Select the image that has been modified for Edges detection
 		run("Analyze Skeleton (2D/3D)", "prune=none show display");														// Run the Analyze Skeleton (2D/3D) command (no user input, hard wired)
 		selectWindow("Branch information");																				// Select the Branch information provided by the plugin used above
-		IJ.renameResults("EdgeLength");																					// Rename the Branch information table as Edge information
+		IJ.renameResults("EdgeLength"); wait(10);																					// Rename the Branch information table as Edge information
 		selectWindow("Results"); run("Close");																			// Select the Results table from the plugin and close it 
 		selectWindow("contour-labeled-skeletons");																		// Select the image contour-labeled-skeletons created above
 		run("8-bit");																									// Convert to 8-bit depth intensity range
@@ -396,38 +400,57 @@
 		saveAs("Tiff",interm_results_current+name+" - edges.tif");														// Save the image edges1 with prefix of current filename
 		run("Close All");																								// Close all the open image windows (not the tables)
 	
-		selectWindow("FilopodiaLength"); IJ.renameResults("Results");													// Rename table to Results to allow interaction
+		selectWindow("FilopodiaLength"); IJ.renameResults("Results"); wait(10);													// Rename table to Results to allow interaction
 		nb_filopodia = nResults;																						// Count the number of filopodia in the current image
 		for (i=0; i<nb_filopodia; i++) {																						//  |
 			FilopMeas = getResult("Branch length", i);																	//  |—Save each line into FilopMeas and keep on concatenating it with itself within matrix
 			FilopMeasMatrix = Array.concat(FilopMeasMatrix,FilopMeas);											//  |
 		}																																	//  |
-		selectWindow("Results"); IJ.renameResults("FilopodiaLength");													// Rename table back to FilopodiaLength to stop interaction
-		selectWindow("EdgeLength"); IJ.renameResults("Results");														// Rename table to Results to allow interaction
+		for (i=0; i<nb_filopodia; i++) {																						//  |
+			FilopMeasV1x = getResult("V1 x", i);																	//  |—Save each line into FilopMeasV1x and keep on concatenating it with itself within matrix
+			FilopMeasMatrixV1x = Array.concat(FilopMeasMatrixV1x,FilopMeasV1x);											//  |
+		}																																	//  |
+		for (i=0; i<nb_filopodia; i++) {																						//  |
+			FilopMeasV1y = getResult("V1 y", i);																	//  |—Save each line into FilopMeasV1y and keep on concatenating it with itself within matrix
+			FilopMeasMatrixV1y = Array.concat(FilopMeasMatrixV1y,FilopMeasV1y);											//  |
+		}																																	//  |
+				
+		selectWindow("Results"); IJ.renameResults("FilopodiaLength"); wait(10);													// Rename table back to FilopodiaLength to stop interaction
+		selectWindow("EdgeLength"); IJ.renameResults("Results"); wait(10);														// Rename table to Results to allow interaction
 		nd_edges = nResults;																							// Count the number of edges in the current image
 		for (i=0; i<nd_edges; i++) {																							//  |
 			EdgeMeas = getResult("Branch length", i);																	//  |—Save each line into EdgeMeas and keep on concatenating it with itself within matrix
 			EdgeMeasMatrix = Array.concat(EdgeMeasMatrix,EdgeMeas);										//  |
 		}																																	//  |
-		selectWindow("Results"); IJ.renameResults("EdgeLength");														// Rename table back to EdgeLength to stop interaction
-		setResult("Filopodia length", 0, 0); setResult("Edge length", 0, 0);											// Create an empty table with 2 column headers
+		selectWindow("Results"); IJ.renameResults("EdgeLength"); wait(10);														// Rename table back to EdgeLength to stop interaction
+		setResult("coordinate x", 0, 0); setResult("coordinate y", 0, 0); setResult("Filopodia length "+unit, 0, 0); setResult("Edge length "+unit, 0, 0);											// Create an empty table with 4 column headers
 		updateResults();																								// Haha ImageJ seems to need that to actually update the results table display
 		for (i=0; i<nb_filopodia; i++) {																						//  |
-			setResult("Filopodia length", i, FilopMeasMatrix[i+1]);														//  |—Transfer the FilopMeasMatrix into the new Results table, row by row
+			setResult("coordinate x", i, FilopMeasMatrixV1x[i+1]);														//  |—Transfer the FilopMeasMatrix into the new Results table, row by row
 		}																																	//  |
+		for (i=0; i<nb_filopodia; i++) {																						//  |
+			setResult("coordinate y", i, FilopMeasMatrixV1y[i+1]);														//  |—Transfer the FilopMeasMatrix into the new Results table, row by row
+		}	
+		for (i=0; i<nb_filopodia; i++) {																						//  |
+			setResult("Filopodia length "+unit, i, FilopMeasMatrix[i+1]);														//  |—Transfer the FilopMeasMatrix into the new Results table, row by row
+		}			
 		for (i=0; i<nd_edges; i++) {																							//  |
-			setResult("Edge length", i, EdgeMeasMatrix[i+1]);															//  |—Transfer the EdgeMeasMatrix into the new Results table, row by row
+			setResult("Edge length "+unit, i, EdgeMeasMatrix[i+1]);															//  |—Transfer the EdgeMeasMatrix into the new Results table, row by row
 		}																																	//  |
 		
-		FilopMeasMatrix = "";																							// Cleanup of the variable FilopMeasMatrix
-		EdgeMeasMatrix = "";																							// Cleanup of the variable EdgeMeasMatrix
+		FilopMeasMatrixV1y = "";																						// Cleanup of the variable 
+		FilopMeasMatrixV1x = "";																						// Cleanup of the variable 
+		FilopMeasMatrix = "";																							// Cleanup of the variable 
+		EdgeMeasMatrix = "";																							// Cleanup of the variable 
 		
-		selectWindow("Results"); IJ.renameResults("FiloQuant");															// Rename table FiloQuant because it sounds better
+		selectWindow("Results"); IJ.renameResults("FiloQuant"); wait(10);															// Rename table FiloQuant because it sounds better
 		selectWindow("FiloQuant");																						// Select the FiloQuant table
 		saveAs("Results", results_directory+name+" - Results.csv");														// Save the FiloQuant table with prefix of current filename
 		run("Close");																									// Close the FiloQuant table
-		selectWindow("FilopodiaLength"); run("Close");																	// Close the FilopodiaLength table
-		selectWindow("EdgeLength");	run("Close");																		// Close the EdgeLength table
+		close("FilopodiaLength"); 						// Close the FilopodiaLength table												
+		close("EdgeLength");  							 // Close the FilopodiaLength table
+		
+		
 		
 	//save the settings
 		setResult("Settings", 0, "Edge detection: Threshold for cell edges") ;												// Save the header for threshold value used for cell edges
