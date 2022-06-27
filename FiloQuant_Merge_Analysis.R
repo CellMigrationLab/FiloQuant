@@ -1,4 +1,3 @@
-#Example here written using SRGAP2 as gene of choice. Supplement with your own.
 
 ##FOR shCTRLm
 ##set the working directory for the desired group of files for analysis
@@ -31,7 +30,7 @@ filename_short <- file_path_sans_ext(basename(filenames))
 shCTRLmfilopodiaCounts <- sapply(filenames, function(f) nrow(read.csv(f, header = F, skip = 1)))
 data.frame(shCTRLmfilopodiaCounts)
 
-# retrive edge length
+# retrieve edge length
 
 EdgeL <- data.frame(nrow = length(filenames), ncol = 2)
 
@@ -39,7 +38,7 @@ for (filename in filenames) {
   
   p = file_path_sans_ext(basename(filename))
   Values <- read_csv(filename) 
-  colnames(Values)  <- c("x","y" ,"Length", "edge")
+  colnames(Values)  <- c("ID","x","y" ,"Length", "edge")
   EdgeL[filename, ] <- sum(Values$edge)
 }
 
@@ -54,7 +53,7 @@ for (filename in filenames) {
   
   p = file_path_sans_ext(basename(filename))
   Values <- read_csv(filename) 
-  colnames(Values)  <- c("x","y" ,"Length", "edge")
+  colnames(Values)  <- c("ID","x","y" ,"Length", "edge")
   AverageLength[filename, ] <- mean(Values$Length)
 }
 
